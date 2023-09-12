@@ -1,0 +1,37 @@
+name: Webhook to SNS
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: '投稿するメッセージ'
+        required: true
+jobs:
+  webhook-to-sns:
+    runs-on: ubuntu-latest
+    # 5分以上かかったらタイムアウト
+    timeout-minutes: 5
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Cacheの復元
+      - name: Cache Deno Deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.deno
+            ~/.cache/deno
+          key: ${{ hashFiles('deno.lock') }}
+      # Denoのセットアップ
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      # Denoの実行
+      - name: Deno Run
+        run: deno run --allow-read --allow-write --allow-env --allow-net main.ts
+        env:
+          BLUESKY_IDENTIFIER: ${{secrets.BLUESKY_IDENTIFIER}}
+          BLUESKY_PASSWORD: ${{secrets.BLUESKY_PASSWORD}}
+          WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
+          MESSAGE: ${{github.event.inputs.message}}
