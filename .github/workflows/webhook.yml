@@ -7,7 +7,7 @@ on:
         required: true
 jobs:
   webhook-to-sns:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     # 5分以上かかったらタイムアウト
     timeout-minutes: 5
     steps:

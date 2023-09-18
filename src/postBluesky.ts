@@ -1,3 +1,4 @@
+import { abortable } from 'https://deno.land/std@0.201.0/async/abortable.ts';
 import AtprotoAPI, { BskyAgent, RichText } from 'npm:@atproto/api';
 
 export default async ({
@@ -18,21 +19,35 @@ export default async ({
   image?: Uint8Array;
 }) => {
   const thumb = await (async () => {
-    if (image instanceof Uint8Array && typeof mimeType === 'string') {
-      // 画像をアップロード
-      const uploadedImage = await agent.uploadBlob(image, {
-        encoding: mimeType,
-      });
+    try {
+      if (image instanceof Uint8Array && typeof mimeType === 'string') {
+        const c = new AbortController();
+        // 10秒でタイムアウト
+        setTimeout(() => c.abort(), 1000 * 10);
 
-      // 投稿オブジェクトに画像を追加
-      return {
-        $type: 'blob',
-        ref: {
-          $link: uploadedImage.data.blob.ref.toString(),
-        },
-        mimeType: uploadedImage.data.blob.mimeType,
-        size: uploadedImage.data.blob.size,
-      };
+        // 画像をアップロード
+        const uploadedImage = await abortable(
+          agent.uploadBlob(image, {
+            encoding: mimeType,
+          }),
+          c.signal,
+        );
+
+        // 投稿オブジェクトに画像を追加
+        return {
+          $type: 'blob',
+          ref: {
+            $link: uploadedImage.data.blob.ref.toString(),
+          },
+          mimeType: uploadedImage.data.blob.mimeType,
+          size: uploadedImage.data.blob.size,
+        };
+      }
+      return;
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2));
+      console.log('failed to upload image');
+      return;
     }
   })();
 
