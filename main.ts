@@ -66,9 +66,9 @@ try {
   await postBluesky({
     agent,
     rt: rt,
-    title: og.ogTitle || '',
+    title: (og.ogTitle || '').trim(),
     link: uri || '',
-    description: og.ogDescription || '',
+    description: (og.ogDescription || '').trim(),
     mimeType,
     image: resizedImage,
   });
