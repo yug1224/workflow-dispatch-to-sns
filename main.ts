@@ -7,7 +7,7 @@ import resizeImage from './src/resizeImage.ts';
 
 try {
   // メッセージを取得
-  const text = Deno.env.get('MESSAGE') || '';
+  const text = (Deno.env.get('MESSAGE') || '').trim();
   console.log(text);
 
   // 対象がなかったら終了
