@@ -24,16 +24,17 @@ export default async (url: string) => {
       const image = await Image.decode(buffer);
       const maxWidth = 1200;
       const maxHeight = 1200;
-      const maxByteLength = 1 * 1024 * 1024;
-      resizedImage = (image.width <= maxWidth && image.height <= maxHeight) ||
-          buffer.byteLength <= maxByteLength
-        ? await image.encodeJPEG()
-        : await image
-          .resize(
-            image.width >= image.height ? maxWidth : Image.RESIZE_AUTO,
-            image.width < image.height ? maxHeight : Image.RESIZE_AUTO,
-          )
-          .encodeJPEG();
+      const maxByteLength = 976.56 * 1000;
+      resizedImage =
+        (image.width <= maxWidth && image.height <= maxHeight) &&
+          (buffer.byteLength <= maxByteLength)
+          ? await image.encodeJPEG()
+          : await image
+            .resize(
+              image.width >= image.height ? maxWidth : Image.RESIZE_AUTO,
+              image.width < image.height ? maxHeight : Image.RESIZE_AUTO,
+            )
+            .encodeJPEG();
     }
     console.log('success to resize image');
   } catch {
