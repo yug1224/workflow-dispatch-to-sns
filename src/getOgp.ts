@@ -21,8 +21,8 @@ export default async (url: string) => {
     const charset =
       ((doc?.documentElement?.querySelector('meta[http-equiv="content-type"]')?.attributes.getNamedItem('content')
         ?.value || '').toLowerCase().match(/charset=(.*)/) || '')[1] ||
-      (doc?.documentElement?.querySelector('meta[charset="shift_jis"]')?.attributes.getNamedItem('charset')?.value ||
-        '').toLowerCase() ||
+      (doc?.documentElement?.querySelector('meta[charset]')?.attributes.getNamedItem('charset')?.value || '')
+        .toLowerCase() ||
       'utf-8';
 
     if (charset !== 'utf-8') {
