@@ -8,7 +8,7 @@ interface fetchRetry {
 export default async (url: string) => {
   const fetchRetry = async (url: string, retryCount = 0): Promise<fetchRetry> => {
     const response = await fetch(url);
-    const contentType = response.headers.get('content-type');
+    const contentType = response.headers.get('content-type') || '';
 
     // 画像が取得できなかった場合
     if (!response.ok || !contentType?.includes('image')) {
@@ -41,19 +41,27 @@ export default async (url: string) => {
       const gif = await GIF.decode(buffer, true);
       resizedImage = await gif.encode();
     } else {
-      mimeType = 'image/jpeg';
       const image = await Image.decode(buffer);
       const maxWidth = 1200;
       const maxHeight = 1200;
       const maxByteLength = 976.56 * 1000;
-      resizedImage = (image.width <= maxWidth && image.height <= maxHeight) && (buffer.byteLength <= maxByteLength)
-        ? await image.encodeJPEG()
-        : await image
-          .resize(
-            image.width >= image.height ? maxWidth : Image.RESIZE_AUTO,
-            image.width < image.height ? maxHeight : Image.RESIZE_AUTO,
-          )
-          .encodeJPEG();
+
+      // const condition = (image.width <= maxWidth && image.height <= maxHeight) && (buffer.byteLength <= maxByteLength);
+      const condition = buffer.byteLength <= maxByteLength;
+      const resizeWidth = image.width >= image.height ? maxWidth : Image.RESIZE_AUTO;
+      const resizeHeight = image.width < image.height ? maxHeight : Image.RESIZE_AUTO;
+
+      // contentTypeがimage/jpegの場合
+      if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+        mimeType = 'image/jpeg';
+        resizedImage = condition ? new Uint8Array(buffer) : await image.resize(resizeWidth, resizeHeight).encodeJPEG();
+      }
+
+      // contentTypeがimage/pngの場合
+      if (contentType.includes('png')) {
+        mimeType = 'image/png';
+        resizedImage = condition ? new Uint8Array(buffer) : await image.resize(resizeWidth, resizeHeight).encode();
+      }
     }
     console.log('success to resize image');
   } catch {

@@ -11,71 +11,91 @@ interface uploadRetry {
 export default async ({
   agent,
   rt,
-  title,
-  link,
-  description,
+  ogTitle,
+  ogUrl,
+  ogDescription,
+  ogMimeType,
+  ogImage,
   mimeType,
   image,
 }: {
   agent: BskyAgent;
   rt: RichText;
-  title: string;
-  link: string;
-  description: string;
+  ogTitle: string;
+  ogUrl: string;
+  ogDescription: string;
+  ogMimeType?: string;
+  ogImage?: Uint8Array;
   mimeType?: string;
   image?: Uint8Array;
 }) => {
+  const uploadRetry = async (image: Uint8Array, mimeType: string, retryCount = 0): Promise<uploadRetry | undefined> => {
+    try {
+      const c = new AbortController();
+      // 10秒でタイムアウト
+      setTimeout(() => {
+        console.log('timeout');
+        return c.abort();
+      }, 1000 * 10 * (retryCount + 1));
+
+      // 画像をアップロード
+      const uploadedImage = await abortable(
+        agent.uploadBlob(image, {
+          encoding: mimeType,
+        }),
+        c.signal,
+      );
+      console.log('success to upload image');
+
+      // 投稿オブジェクトに画像を追加
+      return {
+        $type: 'blob',
+        ref: {
+          $link: uploadedImage.data.blob.ref.toString(),
+        },
+        mimeType: uploadedImage.data.blob.mimeType,
+        size: uploadedImage.data.blob.size,
+      };
+    } catch (e) {
+      console.log(JSON.stringify(e, null, 2));
+      // 3回リトライしてもダメならundefinedを返す
+      if (retryCount >= 3) {
+        console.log('failed to upload image');
+        return;
+      }
+
+      // リトライ処理
+      console.log(`upload retry ${retryCount + 1} times`);
+      return await uploadRetry(image, mimeType, retryCount + 1);
+    }
+  };
+
   const thumb = await (async () => {
-    if (!(image instanceof Uint8Array && typeof mimeType === 'string')) return;
+    if (!(ogImage instanceof Uint8Array)) return;
+    if (!(typeof ogMimeType === 'string')) return;
     console.log(
+      'thumb',
+      JSON.stringify(
+        { imageByteLength: ogImage.byteLength, encoding: ogMimeType },
+        null,
+        2,
+      ),
+    );
+    return await uploadRetry(ogImage, ogMimeType);
+  })();
+
+  const postImage = await (async () => {
+    if (!(image instanceof Uint8Array)) return;
+    if (!(typeof mimeType === 'string')) return;
+    console.log(
+      'postImage',
       JSON.stringify(
         { imageByteLength: image.byteLength, encoding: mimeType },
         null,
         2,
       ),
     );
-
-    const uploadRetry = async (retryCount = 0): Promise<uploadRetry | undefined> => {
-      try {
-        const c = new AbortController();
-        // 10秒でタイムアウト
-        setTimeout(() => {
-          console.log('timeout');
-          return c.abort();
-        }, 1000 * 10 * (retryCount + 1));
-
-        // 画像をアップロード
-        const uploadedImage = await abortable(
-          agent.uploadBlob(image, {
-            encoding: mimeType,
-          }),
-          c.signal,
-        );
-        console.log('success to upload image');
-
-        // 投稿オブジェクトに画像を追加
-        return {
-          $type: 'blob',
-          ref: {
-            $link: uploadedImage.data.blob.ref.toString(),
-          },
-          mimeType: uploadedImage.data.blob.mimeType,
-          size: uploadedImage.data.blob.size,
-        };
-      } catch (e) {
-        console.log(JSON.stringify(e, null, 2));
-        // 3回リトライしてもダメならundefinedを返す
-        if (retryCount >= 3) {
-          console.log('failed to upload image');
-          return;
-        }
-
-        // リトライ処理
-        console.log(`upload retry ${retryCount + 1} times`);
-        return await uploadRetry(retryCount + 1);
-      }
-    };
-    return await uploadRetry();
+    return await uploadRetry(image, mimeType);
   })();
 
   const postObj:
@@ -84,19 +104,27 @@ export default async ({
       $type: 'app.bsky.feed.post',
       text: rt.text,
       facets: rt.facets,
-      embed: {
-        $type: 'app.bsky.embed.external',
-        external: {
-          uri: link,
-          title,
-          description,
-          thumb,
+      embed: image
+        ? {
+          $type: 'app.bsky.embed.images',
+          images: [{
+            alt: '',
+            image: postImage,
+          }],
+        }
+        : {
+          $type: 'app.bsky.embed.external',
+          external: {
+            uri: ogUrl,
+            title: ogTitle,
+            description: ogDescription,
+            thumb,
+          },
         },
-      },
       langs: ['ja'],
     };
 
-  if (!link) {
+  if (!ogUrl && !image) {
     delete postObj.embed;
   }
 

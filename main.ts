@@ -7,11 +7,13 @@ import resizeImage from './src/resizeImage.ts';
 
 try {
   // メッセージを取得
-  const text = (Deno.env.get('MESSAGE') || '').trim();
-  console.log(text);
+  const MESSAGE = (Deno.env.get('MESSAGE') || '').trim();
+  console.log(MESSAGE);
+  const IMAGE_URL = (Deno.env.get('IMAGE_URL') || '').trim();
+  console.log(IMAGE_URL);
 
   // 対象がなかったら終了
-  if (!text.length) {
+  if (!MESSAGE.length) {
     console.log('not found message');
     Deno.exit(0);
   }
@@ -25,7 +27,7 @@ try {
   await agent.login({ identifier, password });
 
   // リッチテキストを作成
-  const rt = new RichText({ text });
+  const rt = new RichText({ text: MESSAGE });
   await rt.detectFacets(agent);
 
   // uriを取得
@@ -53,7 +55,7 @@ try {
   })();
 
   // 画像のリサイズ
-  const { mimeType, resizedImage } = await (async () => {
+  const { mimeType: ogMimeType, resizedImage: ogImage } = await (async () => {
     const ogImage = og.ogImage?.at(0);
     if (!ogImage) {
       console.log('ogp image not found');
@@ -62,19 +64,33 @@ try {
     return await resizeImage(new URL(ogImage.url, uri).href);
   })();
 
+  // 画像のリサイズ
+  const { mimeType, resizedImage } = await (async () => {
+    if (!IMAGE_URL) {
+      console.log('IMAGE_URL not found');
+      return {};
+    }
+    return await resizeImage(new URL(IMAGE_URL).href);
+  })();
+
   // Blueskyに投稿
   await postBluesky({
     agent,
     rt: rt,
-    title: (og.ogTitle || '').trim(),
-    link: uri || '',
-    description: (og.ogDescription || '').trim(),
+    ogTitle: (og.ogTitle || '').trim(),
+    ogUrl: uri || '',
+    ogDescription: (og.ogDescription || '').trim(),
+    ogMimeType,
+    ogImage,
     mimeType,
     image: resizedImage,
   });
 
-  // IFTTTを使ってXに投稿
-  await postWebhook(text);
+  // IFTTTを使ってXに投稿する
+  await postWebhook({
+    text: MESSAGE,
+    image: IMAGE_URL || undefined,
+  });
 
   // 終了
   Deno.exit(0);

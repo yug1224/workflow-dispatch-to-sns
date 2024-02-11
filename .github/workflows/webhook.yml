@@ -5,6 +5,9 @@ on:
       message:
         description: '投稿するメッセージ'
         required: true
+      image_url:
+        description: '投稿する画像のURL'
+        required: false
 jobs:
   webhook-to-sns:
     runs-on: macos-latest
@@ -16,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
       # Cacheの復元
       - name: Cache Deno Deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.deno
@@ -34,4 +37,6 @@ jobs:
           BLUESKY_IDENTIFIER: ${{secrets.BLUESKY_IDENTIFIER}}
           BLUESKY_PASSWORD: ${{secrets.BLUESKY_PASSWORD}}
           WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
+          WEBHOOK_URL_WITH_IMAGE: ${{secrets.WEBHOOK_URL_WITH_IMAGE}}
           MESSAGE: ${{github.event.inputs.message}}
+          IMAGE_URL: ${{github.event.inputs.image_url}}
