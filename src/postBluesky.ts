@@ -16,8 +16,6 @@ export default async ({
   ogDescription,
   ogMimeType,
   ogImage,
-  mimeType,
-  image,
 }: {
   agent: BskyAgent;
   rt: RichText;
@@ -26,8 +24,6 @@ export default async ({
   ogDescription: string;
   ogMimeType?: string;
   ogImage?: Uint8Array;
-  mimeType?: string;
-  image?: Uint8Array;
 }) => {
   const uploadRetry = async (image: Uint8Array, mimeType: string, retryCount = 0): Promise<uploadRetry | undefined> => {
     try {
@@ -84,47 +80,25 @@ export default async ({
     return await uploadRetry(ogImage, ogMimeType);
   })();
 
-  const postImage = await (async () => {
-    if (!(image instanceof Uint8Array)) return;
-    if (!(typeof mimeType === 'string')) return;
-    console.log(
-      'postImage',
-      JSON.stringify(
-        { imageByteLength: image.byteLength, encoding: mimeType },
-        null,
-        2,
-      ),
-    );
-    return await uploadRetry(image, mimeType);
-  })();
-
   const postObj:
     & Partial<AtprotoAPI.AppBskyFeedPost.Record>
     & Omit<AtprotoAPI.AppBskyFeedPost.Record, 'createdAt'> = {
       $type: 'app.bsky.feed.post',
       text: rt.text,
       facets: rt.facets,
-      embed: image
-        ? {
-          $type: 'app.bsky.embed.images',
-          images: [{
-            alt: '',
-            image: postImage,
-          }],
-        }
-        : {
-          $type: 'app.bsky.embed.external',
-          external: {
-            uri: ogUrl,
-            title: ogTitle,
-            description: ogDescription,
-            thumb,
-          },
+      embed: {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri: ogUrl,
+          title: ogTitle,
+          description: ogDescription,
+          thumb,
         },
+      },
       langs: ['ja'],
     };
 
-  if (!ogUrl && !image) {
+  if (!ogUrl) {
     delete postObj.embed;
   }
 

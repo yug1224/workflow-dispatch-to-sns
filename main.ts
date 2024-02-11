@@ -2,15 +2,12 @@ import 'https://deno.land/std@0.193.0/dotenv/load.ts';
 import AtprotoAPI from 'npm:@atproto/api';
 import getOgp from './src/getOgp.ts';
 import postBluesky from './src/postBluesky.ts';
-import postWebhook from './src/postWebhook.ts';
 import resizeImage from './src/resizeImage.ts';
 
 try {
   // メッセージを取得
   const MESSAGE = (Deno.env.get('MESSAGE') || '').trim();
   console.log(MESSAGE);
-  const IMAGE_URL = (Deno.env.get('IMAGE_URL') || '').trim();
-  console.log(IMAGE_URL);
 
   // 対象がなかったら終了
   if (!MESSAGE.length) {
@@ -64,15 +61,6 @@ try {
     return await resizeImage(new URL(ogImage.url, uri).href);
   })();
 
-  // 画像のリサイズ
-  const { mimeType, resizedImage } = await (async () => {
-    if (!IMAGE_URL) {
-      console.log('IMAGE_URL not found');
-      return {};
-    }
-    return await resizeImage(new URL(IMAGE_URL).href);
-  })();
-
   // Blueskyに投稿
   await postBluesky({
     agent,
@@ -82,14 +70,6 @@ try {
     ogDescription: (og.ogDescription || '').trim(),
     ogMimeType,
     ogImage,
-    mimeType,
-    image: resizedImage,
-  });
-
-  // IFTTTを使ってXに投稿する
-  await postWebhook({
-    text: MESSAGE,
-    image: IMAGE_URL || undefined,
   });
 
   // 終了

@@ -1,15 +1,12 @@
-name: Webhook to SNS
+name: Workflow Dispatch to Bluesky
 on:
   workflow_dispatch:
     inputs:
       message:
         description: '投稿するメッセージ'
         required: true
-      image_url:
-        description: '投稿する画像のURL'
-        required: false
 jobs:
-  webhook-to-sns:
+  workflow-dispatch-to-bluesky:
     runs-on: macos-latest
     # 5分以上かかったらタイムアウト
     timeout-minutes: 5
@@ -36,7 +33,4 @@ jobs:
         env:
           BLUESKY_IDENTIFIER: ${{secrets.BLUESKY_IDENTIFIER}}
           BLUESKY_PASSWORD: ${{secrets.BLUESKY_PASSWORD}}
-          WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
-          WEBHOOK_URL_WITH_IMAGE: ${{secrets.WEBHOOK_URL_WITH_IMAGE}}
           MESSAGE: ${{github.event.inputs.message}}
-          IMAGE_URL: ${{github.event.inputs.image_url}}
