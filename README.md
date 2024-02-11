@@ -1,3 +1,3 @@
-# webhook-to-sns
+# workflow-dispatch-to-sns
 
-webhookで受け取ったメッセージをBlueskyに投稿する
+workflow_dispatchで受け取ったメッセージをSNSに投稿する

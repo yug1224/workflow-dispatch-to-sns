@@ -1,9 +1,9 @@
 import 'https://deno.land/std@0.193.0/dotenv/load.ts';
 import AtprotoAPI from 'npm:@atproto/api';
-import getOgp from './src/getOgp.ts';
-import postBluesky from './src/postBluesky.ts';
-import postWebhook from './src/postWebhook.ts';
-import resizeImage from './src/resizeImage.ts';
+import getOgp from './lib/getOgp.ts';
+import postBluesky from './lib/postBluesky.ts';
+import postWebhook from './lib/postWebhook.ts';
+import resizeImage from './lib/resizeImage.ts';
 
 try {
   // メッセージを取得
@@ -86,7 +86,7 @@ try {
     image: resizedImage,
   });
 
-  // IFTTTを使ってXに投稿する
+  // IFTTTを使ってXに投稿
   await postWebhook({
     text: MESSAGE,
     image: IMAGE_URL || undefined,

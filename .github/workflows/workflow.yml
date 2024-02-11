@@ -1,4 +1,4 @@
-name: Webhook to SNS
+name: Workflow Dispatch to SNS
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +9,7 @@ on:
         description: '投稿する画像のURL'
         required: false
 jobs:
-  webhook-to-sns:
+  workflow-dispatch-to-sns:
     runs-on: macos-latest
     # 5分以上かかったらタイムアウト
     timeout-minutes: 5
