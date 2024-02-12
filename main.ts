@@ -9,8 +9,6 @@ try {
   // メッセージを取得
   const MESSAGE = (Deno.env.get('MESSAGE') || '').trim();
   console.log(MESSAGE);
-  const IMAGE_URL = (Deno.env.get('IMAGE_URL') || '').trim();
-  console.log(IMAGE_URL);
 
   // 対象がなかったら終了
   if (!MESSAGE.length) {
@@ -61,16 +59,7 @@ try {
       console.log('ogp image not found');
       return {};
     }
-    return await resizeImage(new URL(ogImage.url, uri).href);
-  })();
-
-  // 画像のリサイズ
-  const { mimeType, resizedImage } = await (async () => {
-    if (!IMAGE_URL) {
-      console.log('IMAGE_URL not found');
-      return {};
-    }
-    return await resizeImage(new URL(IMAGE_URL).href);
+    return await resizeImage({ url: new URL(ogImage.url, uri).href });
   })();
 
   // Blueskyに投稿
@@ -82,15 +71,10 @@ try {
     ogDescription: (og.ogDescription || '').trim(),
     ogMimeType,
     ogImage,
-    mimeType,
-    image: resizedImage,
   });
 
   // IFTTTを使ってXに投稿
-  await postWebhook({
-    text: MESSAGE,
-    image: IMAGE_URL || undefined,
-  });
+  await postWebhook({ text: MESSAGE });
 
   // 終了
   Deno.exit(0);

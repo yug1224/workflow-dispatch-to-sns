@@ -5,9 +5,6 @@ on:
       message:
         description: '投稿するメッセージ'
         required: true
-      image_url:
-        description: '投稿する画像のURL'
-        required: false
 jobs:
   workflow-dispatch-to-sns:
     runs-on: macos-latest
@@ -32,11 +29,9 @@ jobs:
           deno-version: v1.x
       # Denoの実行
       - name: Deno Run
-        run: deno run --allow-read --allow-write --allow-env --allow-net main.ts
+        run: deno run --allow-read --allow-write --allow-env --allow-net --allow-ffi main.ts
         env:
           BLUESKY_IDENTIFIER: ${{secrets.BLUESKY_IDENTIFIER}}
           BLUESKY_PASSWORD: ${{secrets.BLUESKY_PASSWORD}}
           WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
-          WEBHOOK_URL_WITH_IMAGE: ${{secrets.WEBHOOK_URL_WITH_IMAGE}}
           MESSAGE: ${{github.event.inputs.message}}
-          IMAGE_URL: ${{github.event.inputs.image_url}}
