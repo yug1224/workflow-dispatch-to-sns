@@ -1,4 +1,4 @@
-import { GIF, Image } from 'https://deno.land/x/imagescript@1.2.15/mod.ts';
+import sharp from 'npm:sharp';
 
 interface fetchRetry {
   response?: Response;
@@ -25,53 +25,53 @@ export default async (url: string) => {
       contentType,
     };
   };
-  const { response, contentType } = await fetchRetry(url);
-  if (!response || !contentType) {
+  const { response } = await fetchRetry(url);
+  if (!response) {
     console.log('failed to get image');
     return {};
   }
-
   const buffer = await response.arrayBuffer();
 
-  let mimeType, resizedImage;
   try {
-    // TODO: 画像を1MB以下になるまでリサイズしたい
-    if (contentType.includes('gif')) {
-      mimeType = 'image/gif';
-      const gif = await GIF.decode(buffer, true);
-      resizedImage = await gif.encode();
-    } else {
-      const image = await Image.decode(buffer);
-      const maxWidth = 1200;
-      const maxHeight = 1200;
+    const resizeRetry = async ({
+      buffer,
+      retryCount = 0,
+    }: {
+      buffer: ArrayBuffer;
+      retryCount?: number;
+    }): Promise<{ mimeType?: string; resizedImage?: Uint8Array }> => {
+      const image = await sharp(buffer);
+      const { width, height } = await image.metadata();
+
+      const mimeType = 'image/avif';
+      const maxWidth = 2000;
+      const maxHeight = 2000;
       const maxByteLength = 976.56 * 1000;
+      const resizeWidth = width && height && width >= height ? maxWidth : undefined;
+      const resizeHeight = width && height && width < height ? maxHeight : undefined;
 
-      // const condition = (image.width <= maxWidth && image.height <= maxHeight) && (buffer.byteLength <= maxByteLength);
-      const condition = buffer.byteLength <= maxByteLength;
-      const resizeWidth = image.width >= image.height ? maxWidth : Image.RESIZE_AUTO;
-      const resizeHeight = image.width < image.height ? maxHeight : Image.RESIZE_AUTO;
+      const resizedImage = await image.resize({ width: resizeWidth, height: resizeHeight }).avif({
+        quality: 100 - (retryCount * 2),
+      }).toBuffer();
 
-      // contentTypeがimage/jpegの場合
-      if (contentType.includes('jpeg') || contentType.includes('jpg')) {
-        mimeType = 'image/jpeg';
-        resizedImage = condition ? new Uint8Array(buffer) : await image.resize(resizeWidth, resizeHeight).encodeJPEG();
+      console.log('resizedImage.byteLength', resizedImage.byteLength);
+      if (resizedImage && resizedImage.byteLength > maxByteLength) {
+        // リトライ処理
+        console.log(`resize retry ${retryCount + 1} times`);
+        return await resizeRetry({ buffer, retryCount: retryCount + 1 });
       }
+      return { mimeType, resizedImage };
+    };
+    const { mimeType, resizedImage } = await resizeRetry({ buffer });
 
-      // contentTypeがimage/pngの場合
-      if (contentType.includes('png')) {
-        mimeType = 'image/png';
-        resizedImage = condition ? new Uint8Array(buffer) : await image.resize(resizeWidth, resizeHeight).encode();
-      }
-    }
     console.log('success to resize image');
+    return {
+      mimeType,
+      resizedImage,
+    };
   } catch {
     // 画像のリサイズに失敗した場合は空オブジェクトを返す
     console.log('failed to resize image');
     return {};
   }
-
-  return {
-    mimeType,
-    resizedImage,
-  };
 };
