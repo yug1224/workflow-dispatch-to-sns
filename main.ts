@@ -29,22 +29,17 @@ try {
   await rt.detectFacets(agent);
 
   // uriを取得
-  const uri = rt.facets?.reduce(
-    (acc, facet): string => {
-      if (acc) return acc;
+  const uri = rt.facets?.reduce((acc, facet): string => {
+    if (acc) return acc;
 
-      // facet.featuresが配列でない場合は空文字を返す
-      if (!Array.isArray(facet.features)) return '';
-      const feature = facet.features.find(
-        (feature) => feature?.$type === 'app.bsky.richtext.facet#link',
-      );
+    // facet.featuresが配列でない場合は空文字を返す
+    if (!Array.isArray(facet.features)) return '';
+    const feature = facet.features.find((feature) => feature?.$type === 'app.bsky.richtext.facet#link');
 
-      // feature.uriがstringでない場合は空文字を返す
-      if (typeof feature?.uri !== 'string') return '';
-      return feature.uri;
-    },
-    '',
-  );
+    // feature.uriがstringでない場合は空文字を返す
+    if (typeof feature?.uri !== 'string') return '';
+    return feature.uri;
+  }, '');
 
   // uriがある場合はogpを取得
   const og = await (async () => {
@@ -59,7 +54,7 @@ try {
       console.log('ogp image not found');
       return {};
     }
-    return await resizeImage({ url: new URL(ogImage.url, uri).href });
+    return await resizeImage(new URL(ogImage.url, uri).href);
   })();
 
   // Blueskyに投稿

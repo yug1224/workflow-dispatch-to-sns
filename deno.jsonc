@@ -1,20 +1,20 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "strict": true
+    "strict": true,
   },
+  "nodeModulesDir": "auto",
   "fmt": {
     "include": ["./"],
     "indentWidth": 2,
     "lineWidth": 120,
     "proseWrap": "always",
     "singleQuote": true,
-    "useTabs": false
+    "useTabs": false,
   },
   "lint": {
     "include": ["./"],
     "rules": {
-      "tags": ["recommended"]
-    }
-  }
+      "tags": ["recommended"],
+    },
+  },
 }

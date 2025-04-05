@@ -26,7 +26,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@11b63cf76cfcafb4e43f97b6cad24d8e8438f62d # v1.5.2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
       # Denoの実行
       - name: Deno Run
         run: deno run --allow-read --allow-write --allow-env --allow-net --allow-ffi main.ts
